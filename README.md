@@ -1,4 +1,4 @@
-# Credit-Risk-using-SAS
+# EAD-model-using-SAS
 Finding the best fit distribution for LGD using mixture models
 
 <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/f927b835-e245-4ac7-8c75-ad76381bf7ec" />  <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/40361632-f33e-4cd3-b3ae-75bb24fe1cc1" />
