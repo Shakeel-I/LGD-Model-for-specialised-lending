@@ -25,7 +25,7 @@ return: 5 fitting criterions plus the number of effective components and effecti
 
 
 # SAS CODE
-
+```
 %macro modselect(data=, depvar=, kmin=, kmax=, outstat=, modlist=);
 	%let modcnt = %eval(%sysfunc(count(%cmpres(&modlist), %str( )))+1);
 
@@ -58,17 +58,9 @@ proc print data=result;
 run;
 
 title;
-
-
-
-
-
-
-
-
-
-
+```
 =====================
+```
 %macro modselect(data=, depvar=, kmin=, kmax=, outstat=, modlist=);
 	%let modcnt = %eval(%sysfunc(count(%cmpres(&modlist), %str( )))+1);
   
@@ -110,3 +102,4 @@ proc fmm data=mydata.lgd;
 	model + LTV purpose1 /dist=t;
 	output out=fmm_out pred resid(component) resid(overall);
 run;
+```
