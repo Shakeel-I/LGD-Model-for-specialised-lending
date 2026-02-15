@@ -1,29 +1,26 @@
-/****************************************************************************
-* LGD MODELING FOR SPECIALISED LENDING: AEROSPACE & PROJECT FINANCE
-*
-* SUPERVISORY MEMO: LGD MODEL DESIGN AND VALIDATION SUMMARY (2026)
-* -----------------------------------------------------------------------
-* 1. METHODOLOGY & RECOVERY DISCOUNTING:
-*    - Zero-One Inflated Beta (ZOIB) model for Specialised LGD rates.
-*    - Complies with SS11/13 via 9% discount rate floor application.
-* 
-* 2. DOWNTURN LGD & BASEL 3.1 FLOORS:
-*    - Incorporates downturn factors and mandatory Basel 3.1 floors.
-*    - Includes 35% LDP Floor for Project Finance to address data scarcity.
-* 
-* 3. MARGIN OF CONSERVATISM (MoC):
-*    - MoC (10%) addresses model uncertainty per SS1/23 standards.
-* 
-* 4. FIT STATISTICS AND PARAMETER ESTIMATES:
-*    - NLMIXED stats evidence stability for Aerospace and PF segments.
-* 
-* 5. PERFORMANCE & GOVERNANCE:
-*    - Evidence-based driver selection: LTV, Seniority, Asset Quality,
-*      GDP Growth, and Resolution Time satisfy Credit Committee needs.
-*    - Distribution chart confirms model captures bimodal LGD spikes.
-****************************************************************************/
+SUPERVISORY MEMO: LGD MODEL DESIGN AND VALIDATION SUMMARY (2026)
+-----------------------------------------------------------------------
+1. METHODOLOGY & RECOVERY DISCOUNTING:
+    - Zero-One Inflated Beta (ZOIB) model for Specialised LGD rates.
+    - Complies with SS11/13 via 9% discount rate floor application.
+ 
+2. DOWNTURN LGD & BASEL 3.1 FLOORS:
+   - Incorporates downturn factors and mandatory Basel 3.1 floors.
+   - Includes 35% LDP Floor for Project Finance to address data scarcity.
+ 
+3. MARGIN OF CONSERVATISM (MoC):
+   - MoC (10%) addresses model uncertainty per SS1/23 standards.
 
-/* 1. Enhanced Simulation: Mapping Default Events (i) to Economic Cycles */
+4. FIT STATISTICS AND PARAMETER ESTIMATES:
+   - NLMIXED stats evidence stability for Aerospace and PF segments.
+ 
+5. PERFORMANCE & GOVERNANCE:
+   - Evidence-based driver selection: LTV, Seniority, Asset Quality,
+     GDP Growth, and Resolution Time satisfy Credit Committee needs.
+   - Distribution chart confirms model captures bimodal LGD spikes.
+
+### 1. Enhanced Simulation: Mapping Default Events (i) to Economic Cycles
+```sas
 data LGD_data;
    call streaminit(2026);
    do i = 1 to 5000;
@@ -51,15 +48,19 @@ data LGD_data;
       output;
    end;
 run;
+```
 
-/* 2. PORTFOLIO DATA QUALITY CHECK */
+### 2. PORTFOLIO DATA QUALITY CHECK
+```sas
 proc means data=LGD_data n mean std min max;
    title "Input Driver Statistics: Portfolio Data Quality Check";
    var LTV Seniority Asset_Qual GDP_Growth Resolution_Time;
 run;
-title; /* Disables title to prevent spillover into NLMIXED */
+title;
+```
 
-/* 3. Zero-One Inflated Beta Regression (ZOIB) */
+### 3. Zero-One Inflated Beta Regression (ZOIB)
+```sas
 ods select ParameterEstimates FitStatistics;
 proc nlmixed data=LGD_data tech=newrap;
    parms b0=-2.2 b1=1.8 b2=-1.4 b3=0.4 b4=-4.5 b5=0.35 b6=0.5  
@@ -80,8 +81,9 @@ proc nlmixed data=LGD_data tech=newrap;
    model LGD ~ general(ll);
    predict (p_one + (1 - p_zero - p_one)*mu) out=lgd_preds;
 run;
-
-/* 4. LDP Handling & Basel 3.1 Floors (Effective 2026) */
+```
+### 4. LDP Handling & Basel 3.1 Floors (Effective 2026)
+```sas
 data lgd_final;
    set lgd_preds;
    LDP_Floor = (Segment = 1) * 0.35; 
@@ -91,11 +93,13 @@ data lgd_final;
    abs_err = abs(LGD - pred);
    sq_err = (LGD - pred)**2;
 run;
-
-/* 5. Unified Graphics Settings */
+```
+### 5. Unified Graphics Settings
+```sas
 ods graphics / reset width=6.4in height=4.8in;
-
-/* 6. CHART 1: LGD Distribution: Observed vs Predicted */
+```
+### 6. CHART 1: LGD Distribution: Observed vs Predicted
+```sas
 proc sgplot data=lgd_final noborder;
    title height=14pt bold "LGD Distribution: Observed vs Predicted";
    histogram LGD / nbins=40 fillattrs=(color=CXABB0B8 transparency=0.4) 
@@ -110,8 +114,9 @@ proc sgplot data=lgd_final noborder;
          labelattrs=(weight=bold) valueattrs=(weight=bold);
    keylegend "hist" "obs_dens" "pred_dens" / position=top opaque location=inside across=1;
 run;
-
-/* 7. CHART 2: LGD Calibration: Observed vs Predicted */
+```
+### 7. CHART 2: LGD Calibration: Observed vs Predicted
+```sas
 proc rank data=lgd_final out=lgd_ranked groups=10;
    var pred; ranks decile;
 run;
@@ -132,8 +137,9 @@ proc sgplot data=calibration_data noborder;
          labelattrs=(weight=bold) valueattrs=(weight=bold);
    keylegend "obs" "pre" / position=top opaque location=inside across=1;
 run;
-
-/* 8. Performance & Rank Ordering Summary */
+```
+### 8. Performance & Rank Ordering Summary
+```sas
 proc sql;
    title "SUPERVISORY REPORT: Performance & Basel 3.1 Capital Base";
    select 
@@ -147,3 +153,7 @@ proc corr data=lgd_final spearman;
    var LGD pred;
    title "Discriminatory Power: Spearman Rank Correlation";
 run;
+```
+
+
+.
