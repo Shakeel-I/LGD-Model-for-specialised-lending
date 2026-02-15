@@ -1,6 +1,8 @@
 # LGD Model for Specialised Lending  
 **Aerospace & Project Finance – Service-Style Technical Overview**
 
+<img width="614" height="461" alt="image" src="https://github.com/user-attachments/assets/e7eb135e-ff30-435b-91f1-ebb8a930a2d3" />
+
 ## 1. Purpose and scope
 
 This document outlines a specialised **Loss Given Default (LGD)** framework for Aerospace and Project Finance exposures, designed to be deployable as an analytical service or model component within a bank's credit risk infrastructure. It demonstrates compliance with regulatory, governance and credit-committee expectations for internal LGD solutions.
@@ -39,6 +41,9 @@ Economic explanations of driver impacts:
 
 ### Pillar 3 – Asset Specialisation
 Differentiation between Aerospace and Project Finance, asset tiers, jurisdictions and data-scarcity safeguards (35% LDP floor for project finance).
+
+<img width="614" height="461" alt="image" src="https://github.com/user-attachments/assets/1f6d01f4-bb99-4e67-95f0-61ab09b1578e" />
+
 
 ### Pillar 4 – Discriminatory Power
 Spearman rank correlations across portfolios/segments showing higher-risk exposures receive higher LGDs.
