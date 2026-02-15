@@ -1,105 +1,101 @@
-# EAD-model-using-SAS
-Finding the best fit distribution for LGD using mixture models
+# LGD Model for Specialised Lending  
+**Aerospace & Project Finance – Service-Style Technical Overview**
 
-<img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/f927b835-e245-4ac7-8c75-ad76381bf7ec" />  <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/40361632-f33e-4cd3-b3ae-75bb24fe1cc1" />
+## 1. Purpose and scope
 
-<img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/b2c4df7f-a490-4f27-b9e8-aa3c714cfa49" />  <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/75286bf2-884f-4856-80f7-439b795d2d0a" />
+This document outlines a specialised **Loss Given Default (LGD)** framework for Aerospace and Project Finance exposures, designed to be deployable as an analytical service or model component within a bank's credit risk infrastructure. It demonstrates compliance with regulatory, governance and credit-committee expectations for internal LGD solutions.
 
-![Choose](https://github.com/user-attachments/assets/69ae6cf8-d44b-4d00-9dbe-13ba30446e3b)
+The framework combines a Zero-One Inflated Beta (ZOIB) statistical model with explicit regulatory floors, conservative overlays and structured documentation outputs. It supports point-in-time and regulatory LGD estimation, stress testing and transaction-level credit assessment.
 
-Huang & Xie 2012
-A mixture distribution is formed by combining two or more distributions weighted by mixing probabilities. For example, a mixture of two or more beta distributions or a mixture of normal and gamma distributions
-to better model complex data patterns like multimodality or heterogeneity.
+## 2. Core methodology
 
-data: the name of the input dataset
+The LGD model uses a ZOIB specification to accommodate the empirical features of specialised lending recoveries:
 
-depvar: the name of the dependent variable
+- Boundary mass at 0 and 1 to capture full recovery and total loss events explicitly.  
+- A Beta-distributed component on the open interval (0, 1) for partial recoveries.  
+- A three-part likelihood function estimated via non-linear optimisation.
 
-kmax: the maximum number of the components
+**Key risk drivers:**
+- Seniority and security package (priority ranking, collateral type and coverage)  
+- Leverage and collateralisation (LTV, haircuts)  
+- Asset quality tiering (Tier 1 vs Tier 3 aerospace hulls, core vs non-core infrastructure)  
+- Resolution time and workout complexity (legal costs, enforcement processes)  
+- Macroeconomic variables (GDP growth), enabling downturn calibration  
 
-outstat: the name of the output dataset
+Parameter estimates include t-values and p-values, retaining drivers that are both economically intuitive and statistically robust (p < 0.05 where feasible).
 
-modlist: the name list of the distributions tested separated by space
+## 3. Defence Dossier concept
 
-return: 5 fitting criterions plus the number of effective components and effective parameters
+Model outputs form a standardised **"Defence Dossier"** for credit committee papers or validation reviews, organised around four pillars:
+
+### Pillar 1 – Statistical Evidence
+Parameter estimates, significance metrics, goodness-of-fit indicators and rank-ordering statistics.
+
+### Pillar 2 – Directional Reasoning
+Economic explanations of driver impacts:
+- **Seniority**: higher seniority ? lower LGD  
+- **Resolution time**: longer periods ? higher LGD (legal/carry costs, discounting)  
+- **GDP growth**: stronger growth ? lower LGD (downturn consistent)  
+
+### Pillar 3 – Asset Specialisation
+Differentiation between Aerospace and Project Finance, asset tiers, jurisdictions and data-scarcity safeguards (35% LDP floor for project finance).
+
+### Pillar 4 – Discriminatory Power
+Spearman rank correlations across portfolios/segments showing higher-risk exposures receive higher LGDs.
+
+## 4. Illustrative transaction: Project Finance
+
+**"Project Helios"** (Infrastructure/Renewables):
+
+| Parameter | Value |
+|-----------|-------|
+| Asset class | Project Finance |
+| EAD | £150m |
+| Seniority | Senior secured |
+| LTV | 72% |
+| Asset quality | Tier 1 (PPA-backed) |
+
+**Model results:**
+- **Point-in-time LGD**: 28.4%  
+- **Regulatory LGD** (post-MoC/stress): 42.6%  
+
+The regulatory LGD incorporates 3.5-year resolution horizon, 10% MoC and 35% LDP floor, producing a conservative yet economically coherent outcome for a senior, high-quality infrastructure asset.
+
+## 5. Implementation and analytical pipeline
+
+Designed for standard analytical stacks (SAS or equivalent):
+
+**Non-linear estimation**
+- High-dimensional ZOIB likelihood optimisation (NEWRAP-type algorithms)
+- Stable convergence on complex likelihood surfaces
+
+**Data integration**
+- Facility-level (seniority, collateral, guarantees)
+- Asset-level qualitative indicators (tier, jurisdiction)
+- Macroeconomic time series (GDP)
+
+**Validation**
+- Rank-ordering and correlation statistics
+- Bimodal density plots and residual diagnostics
+
+**Deployment options:** Managed analytics service or hosted risk platform component.
+
+## 6. Regulatory and governance alignment
+
+**PRA SS11/13**: 9% discount rate floor, downturn LGD treatment  
+**PRA SS1/23**: Structured "reasoned argument" documentation, transparent MoC  
+**PRA PS1/26 / Basel 3.1**: 25% unsecured corporate floor, 35% project finance LDP floor  
+
+Governance artefacts support internal model approval, validation and regulatory dialogue.
+
+## 7. Theoretical and industry foundations
+
+- **Caselli, S., Gatti, S., & Querci, F. (2008)**. "The Determinants of Loss Given Default (LGD) on Business Loans: An Empirical Analysis."  
+- **Gatti, S. (2018)**. "Project Finance in Theory and Practice."  
+- **UK PRA SS1/23** – Model risk management principles for banks.  
+- **BCBS d424** – "Regulatory Treatment of Specialised Lending."
 
 
-# SAS CODE
-```
-%macro modselect(data=, depvar=, kmin=, kmax=, outstat=, modlist=);
-	%let modcnt = %eval(%sysfunc(count(%cmpres(&modlist), %str( )))+1);
-
-	%do i=1 %to &modcnt;
-		%let modelnow = %scan(&modlist, &i);
-		ods output fitstatistics=&modelnow(rename=(value=&modelnow));
-		ods select densityplot fitstatistics;
-
-		proc fmm data=&data;
-			model &depvar= / krestart kmax=&kmax dist=&modelnow;
-		run;
-
-	%end;
-
-	data &outstat;
-		%do i=1 %to &modcnt;
-			set %scan(&modlist, &i);
-		%end;
-	run;
-
-%mend;
-
-%modselect(data=mydata.lgd, depvar=lgd_time, kmax=5, outstat=result, 
-	modlist=beta lognormal gamma normal);
 
 
-title "Choosing the best distribution";
-
-proc print data=result;
-run;
-
-title;
-```
-=====================
-```
-%macro modselect(data=, depvar=, kmin=, kmax=, outstat=, modlist=);
-	%let modcnt = %eval(%sysfunc(count(%cmpres(&modlist), %str( )))+1);
-  
-  %do i=1 %to &modcnt;
-		%let modelnow = %scan(&modlist, &i);
-		ods output fitstatistics=&modelnow(rename=(value=&modelnow));
-		ods select densityplot fitstatistics;
-
-proc fmm data=&data;
-			model &depvar= / krestart kmax=&kmax dist=&modelnow;
-		run;
-
-%end;
-
-data &outstat;
-		%do i=1 %to &modcnt;
-			set %scan(&modlist, &i);
-		%end;
-	run;
-
-%mend;
-
-%modselect(data=mydata.lgd, depvar=lgd_time, kmax=5, outstat=result, 
-	modlist=beta lognormal gamma normal);
-title "Choosing the best distribution";
-
-proc print data=result;
-run;
-
-title;
-
-proc fmm data=mydata.lgd;
-	model lgd_time=LTV purpose1 / k=3 dist=normal;
-	ods output parameterestimates=parmstat;
-run;
-
-proc fmm data=mydata.lgd;
-	model lgd_time=LTV purpose1 /dist=normal;
-	model + LTV purpose1 /dist=t;
-	output out=fmm_out pred resid(component) resid(overall);
-run;
-```
+.
